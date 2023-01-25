@@ -10,4 +10,4 @@ class book():
     Series = None
     
     def getInfo(self):
-        return self.ISBN, self.Placement, self.Title, self.Author, self.Language, self.Available, self.Copies
+        return [self.ISBN, self.Placement, self.Title, self.Author, self.Language, self.Available, self.Copies]
