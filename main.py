@@ -45,22 +45,25 @@ class LibraryManager(Gtk.Window):
         self.navigation.append_page(self.Maintab, Gtk.Label(label="Main"))
         
         self.Bookstab = Gtk.Grid()
-        self.searchtest = Gtk.Button(label="search")
+        self.Removebook = Gtk.Button(label='Remove')
         
         self.Bookstab.attach(self.booksearch, 0, 0, 2, 2)
         self.Bookstab.attach_next_to(self.Booktable, self.booksearch, Gtk.PositionType.BOTTOM, 2, 2)
         self.Bookstab.attach_next_to(self.SearchCombo, self.booksearch, Gtk.PositionType.RIGHT, 2, 1)
-        self.Bookstab.attach_next_to(self.searchtest, self.SearchCombo, Gtk.PositionType.RIGHT, 2, 1)
+        self.Bookstab.attach_next_to(self.Removebook, self.Booktable, Gtk.PositionType.RIGHT, 2, 1)
         self.navigation.append_page(self.Bookstab, Gtk.Label(label="Books"))
 
-        self.searchtest.connect("clicked", self.update)
+        self.booksearch.connect('activate', self.search)
+        self.Removebook.connect('clicked', self.removebook)
+        
         self.Memberstab = Gtk.Grid()
         self.navigation.append_page(self.Memberstab, Gtk.Label(label="Members"))
 
         self.Settingstab = Gtk.Grid()
         self.navigation.append_page(self.Settingstab, Gtk.Label(label="Settings"))
-        #self.booksearch.connect('activate', self.)
-        self.index = self.SearchCombo.get_active()
+        
+
+
     def fillData(self):
         for x in Borrowed_Books:
             self.treeitr = self.mainstore.append(x)
@@ -97,19 +100,23 @@ class LibraryManager(Gtk.Window):
         self.SearchCombo.set_active(1)
         
     def filterchoice(self, model, iter, data):
+        self.index = self.SearchCombo.get_active()
         if self.booksearch.get_text() != '':
-            if str(model[iter][self.index]) not in self.booksearch.get_text():
+            if str(model[iter][self.index]).__contains__(self.booksearch.get_text()):
+                return True
+            else:
                 return False
         else:
             return True
         
-    #Considering that I'm tired, here's what you have to do wrt the search function and updating the thing
-    #you're going to create 2 functions: one which updates when the text changes, and one that updates when
-    #the combobox changes. And in both of them (I think) there's an input that gets sent to the 2nd argument  
-    #as an argument in that callable function (old error, got fixed), so we take that (which I believei is the
-    #the new state of the object (combobox or Entry). You have to use them each in their specific way and
-    #then use self.Booksinfo.refilter() inside both, and I believe this should work.
+    def search(self, widget):
+        self.Booksfilter.refilter()
+        #the 2nd argument here just absorbs the input that'll be given for it. use for it may be found
+        #later.
     
+    def removebook(self, button):
+        print(button)
+
 window = LibraryManager()
 window.connect('destroy', Gtk.main_quit)
 window.show_all()
