@@ -1,4 +1,4 @@
-import Member, Book, Populate, sys, gi
+import Member, Book, Populate, gi, random
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
@@ -6,9 +6,10 @@ from gi.repository import Gtk
         # ['Les Mots et Les Choses', '1351351358'], ['The Order of things', '1351351258'],
          #['The Book Thief', '1351351234']]
         
-labels = ['ISBN', 'Placement', 'Title', 'Author', 'Language', 'Available', 'Copies']
-Books = Populate.populate()
-Harry = Member.member(2200, "Harry", "0111258070", 3, [], [])
+labels = ['Member', 'ID', 'Title', 'Placement', 'ISBN', 'Due Date', 'Copies Left']
+Books = Populate.populatebook()
+Members = Populate.populatemember()
+Borrowed_Books = []
 
 class LibraryManager(Gtk.Window):
     def __init__(self):
@@ -19,36 +20,36 @@ class LibraryManager(Gtk.Window):
         #parameter for objects in this way: that the ISBN and placement are ints
         #it won't be difficult changing them later, but, let's keep it that way to
         #prioritize what's important
-        self.store = Gtk.ListStore(int, int, str, str, str, bool, int)
-        self.fillData(Books)
-        self.dashboard = Gtk.TreeView(model=self.store)
+        self.Labelsdict = {'mainstore' : ['Member', 'ID', 'Title', 'Placement', 'ISBN', 'Due Date', 'Copies Left'],
+                      'Booksinfo' : ['ISBN', 'Placement', 'Title', 'Author', 'Language', 'Available', 'Copies'],
+                      'Searchfield' : ['ISBN', 'Placement', 'Title', 'Author', 'Language']}
         
-        for i in range(len(labels)):
-            renderer = Gtk.CellRendererText()
-            column = Gtk.TreeViewColumn(labels[i], renderer, text=i)
-            self.dashboard.append_column(column)
-            
-            
-#         self.title = Gtk.CellRendererText()
-#         #self.author = Gtk.CellRendererText()
-# 
-#         self.column.pack_start(self.title, True)
-#         #self.column.pack_start(self.author, True)
-# 
-#         self.column.add_attribute(self.title, "text", 0)
-#         #self.column.add_attribute(self.author, "text", 1)
-# 
-#         self.dashboard.append_column(self.column)
 
-
+        self.Issue()
+        self.booksearch = Gtk.Entry()
+        self.SearchCombo = Gtk.ComboBoxText()
+        self.mainstore = Gtk.ListStore(str, int, str, int, int, str, int)
+        self.Booksinfo = Gtk.ListStore(int, int, str, str, str, bool, int)
+        self.Booksfilter = self.Booksinfo.filter_new()
+        self.Booksfilter.set_visible_func(self.filterchoice)
+        self.fillData()
+        self.dashboard = Gtk.TreeView(model=self.mainstore)
+        self.Booktable = Gtk.TreeView(model=self.Booksinfo)
+        self.setLabels()
+        
         self.navigation = Gtk.Notebook()
         self.add(self.navigation)
         
         self.Maintab = Gtk.Grid()
         self.Maintab.add(self.dashboard)
+        
         self.navigation.append_page(self.Maintab, Gtk.Label(label="Main"))
         
         self.Bookstab = Gtk.Grid()
+        
+        self.Bookstab.attach(self.booksearch, 0, 0, 2, 2)
+        self.Bookstab.attach_next_to(self.Booktable, self.booksearch, Gtk.PositionType.BOTTOM, 2, 2)
+        self.Bookstab.attach_next_to(self.SearchCombo, self.booksearch, Gtk.PositionType.RIGHT, 2, 1)
         self.navigation.append_page(self.Bookstab, Gtk.Label(label="Books"))
 
         self.Memberstab = Gtk.Grid()
@@ -57,18 +58,49 @@ class LibraryManager(Gtk.Window):
         self.Settingstab = Gtk.Grid()
         self.navigation.append_page(self.Settingstab, Gtk.Label(label="Settings"))
     
-    def fillData(self, source):
-        #self.appended = []
-        for x in range(len(source)):
-            self.treeitr = self.store.append([source[x].getInfo()[0], source[x].getInfo()[1],
-                              source[x].getInfo()[2], source[x].getInfo()[3],
-                              source[x].getInfo()[4], source[x].getInfo()[5],
-                              source[x].getInfo()[6]])
+    def fillData(self):
+        for x in Borrowed_Books:
+            self.treeitr = self.mainstore.append(x)
+        
+        for y in Books:
+            self.treeitr = self.Booksinfo.append(y.getInfo())
+    
+    #a psuedo issuing function for now. Will be later edited to require a variable
+    def Issue(self):
+        for x in range(len(Members)):
+            if random.choice([True, False]):
+                randbook = random.choice(Books)
+                if randbook.Available == True:
+                    Members[x].Active_Books.append(randbook)
+                    randbook.Available = False
+                    Borrowed_Books.append([Members[x].name, Members[x].ID,
+                                           randbook.Title, randbook.Placement,
+                                           randbook.ISBN, 'Implement Due Date', randbook.Copies-1])
+                 
+    def setLabels(self):
+        renderer = Gtk.CellRendererText()
+        
+        for z in self.Labelsdict['mainstore']:
+            column = Gtk.TreeViewColumn(z, renderer, text=self.Labelsdict['mainstore'].index(z))
+            self.dashboard.append_column(column)
+                
+        for z in self.Labelsdict['Booksinfo']:
+            column = Gtk.TreeViewColumn(z, renderer, text=self.Labelsdict['Booksinfo'].index(z))
+            self.Booktable.append_column(column)
+        
+        for z in self.Labelsdict['Searchfield']:
+            self.SearchCombo.append_text(z)
+        
+        self.SearchCombo.set_active(1)
+        
+    def filterchoice(self, model, iter, data):
+        if self.booksearch.get_text() != '':
+            field = self.SearchCombo.get_active_text()
+            index = self.SearchCombo.get_active()
+            model[iter][index] = field
             
-#             self.appended.append(self.treeitr)
-#         for x in range(len(self.appended)):
-#             print(self.store[self.appended[x]][:])
-# ^ tests
+        else:
+            return True
 
 window = LibraryManager()
 window.connect('destroy', Gtk.main_quit)

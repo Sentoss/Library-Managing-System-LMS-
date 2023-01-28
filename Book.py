@@ -11,3 +11,4 @@ class book():
     
     def getInfo(self):
         return [self.ISBN, self.Placement, self.Title, self.Author, self.Language, self.Available, self.Copies]
+    
