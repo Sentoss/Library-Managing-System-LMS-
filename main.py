@@ -45,12 +45,17 @@ class LibraryManager(Gtk.Window):
         self.navigation.append_page(self.Maintab, Gtk.Label(label="Main"))
         
         self.Bookstab = Gtk.Grid()
+        self.ButtonGrid = Gtk.Grid()
+        self.ContentGrid = Gtk.Grid()
         self.Removebook = Gtk.Button(label='Remove')
+        self.Bookstab.attach(self.ContentGrid, 0, 0, 2, 2)
+        self.Bookstab.attach_next_to(self.ButtonGrid, self.ContentGrid, Gtk.PositionType.RIGHT, 1, 1)
         
-        self.Bookstab.attach(self.booksearch, 0, 0, 2, 2)
-        self.Bookstab.attach_next_to(self.Booktable, self.booksearch, Gtk.PositionType.BOTTOM, 2, 2)
-        self.Bookstab.attach_next_to(self.SearchCombo, self.booksearch, Gtk.PositionType.RIGHT, 2, 1)
-        self.Bookstab.attach_next_to(self.Removebook, self.Booktable, Gtk.PositionType.RIGHT, 2, 1)
+        self.ContentGrid.attach(self.booksearch, 0, 0, 2, 2)
+        self.ContentGrid.attach_next_to(self.Booktable, self.booksearch, Gtk.PositionType.BOTTOM, 2, 2)
+        self.ButtonGrid.attach(self.SearchCombo, 0, 0, 1, 1)
+        self.ButtonGrid.attach_next_to(self.Removebook, self.SearchCombo, Gtk.PositionType.BOTTOM, 1, 1)
+         
         self.navigation.append_page(self.Bookstab, Gtk.Label(label="Books"))
 
         self.booksearch.connect('activate', self.search)
@@ -115,8 +120,16 @@ class LibraryManager(Gtk.Window):
         #later.
     
     def removebook(self, button):
-        print(button)
-
+        selected = self.Booktable.get_selection()
+        model, path = selected.get_selected_rows()
+        if path is not None:
+            iter = self.Booksinfo.get_iter(path)
+            self.Booksinfo.remove(iter)
+            
+            for i in Books:
+                if i.ISBN == self.Booksinfo[iter][0]:
+                    Books.remove(i)
+            
 window = LibraryManager()
 window.connect('destroy', Gtk.main_quit)
 window.show_all()
