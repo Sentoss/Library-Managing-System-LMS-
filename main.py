@@ -9,6 +9,8 @@ from gi.repository import Gtk
 Books = Populate.populatebook()
 Members = Populate.populatemember()
 Borrowed_Books = []
+for x in Members:
+    print(x.getInfo())
 
 class LibraryManager(Gtk.Window):
     def __init__(self):
@@ -26,7 +28,6 @@ class LibraryManager(Gtk.Window):
         #a dict in which each key points to a list that contains all the iters of a store
         self.ItersList = {'mainstore' : [],
                           'Booksinfo' : []}
-        self.Issue()
         self.booksearch = Gtk.Entry()
         self.SearchCombo = Gtk.ComboBoxText()
         self.mainstore = Gtk.ListStore(str, int, str, int, int, str, int)
@@ -48,14 +49,14 @@ class LibraryManager(Gtk.Window):
         self.MainEntryGrid = Gtk.Grid()
         
         #Entries
-        self.IssueLabel = Gtk.Label(label='Member ID')
-        self.IssueEntry = Gtk.Entry()
-        self.ReturnLabel = Gtk.Label(label='Book Placement')
-        self.ReturnEntry = Gtk.Entry()
-        self.MainEntryGrid.attach(self.IssueLabel, 0, 0, 1, 1)
-        self.MainEntryGrid.attach_next_to(self.IssueEntry, self.IssueLabel, Gtk.PositionType.RIGHT, 1, 1)
-        self.MainEntryGrid.attach(self.ReturnLabel, 0, 1, 1, 1)
-        self.MainEntryGrid.attach_next_to(self.ReturnEntry, self.ReturnLabel, Gtk.PositionType.RIGHT, 1, 1)
+        self.Memberentrylabel = Gtk.Label(label='Member ID')
+        self.MemberEntry = Gtk.Entry()
+        self.BookPlabel = Gtk.Label(label='Book Placement')
+        self.BookPentry = Gtk.Entry()
+        self.MainEntryGrid.attach(self.Memberentrylabel, 0, 0, 1, 1)
+        self.MainEntryGrid.attach_next_to(self.MemberEntry, self.Memberentrylabel, Gtk.PositionType.RIGHT, 1, 1)
+        self.MainEntryGrid.attach(self.BookPlabel, 0, 1, 1, 1)
+        self.MainEntryGrid.attach_next_to(self.BookPentry, self.BookPlabel, Gtk.PositionType.RIGHT, 1, 1)
         self.MainEntryGrid.set_row_spacing(20)
         self.MainEntryGrid.set_column_spacing(10)
         
@@ -106,28 +107,9 @@ class LibraryManager(Gtk.Window):
         self.booksearch.connect('activate', self.search)
         self.Removebook.connect('clicked', self.removebook)
         self.IssueButton.connect('clicked', self.Issue)
-        self.ReturnButton.connect('clicked', self.Return)
+        #self.ReturnButton.connect('clicked', self.Return)
         
-
-    def fillData(self):
-        for x in Borrowed_Books:
-            treeitr = self.mainstore.append(x)
-            self.ItersList['mainstore'].append(treeitr)
-        for y in Books:
-            treeitr = self.Booksinfo.append(y.getInfo())
-            self.ItersList['Booksinfo'].append(treeitr)
-    
-    def Issue(self):
-        for x in range(len(Members)):
-            if random.choice([True, False]):
-                randbook = random.choice(Books)
-                if randbook.Available == True:
-                    Members[x].Active_Books.append(randbook)
-                    randbook.Available = False
-                    Borrowed_Books.append([Members[x].name, Members[x].ID,
-                                           randbook.Title, randbook.Placement,
-                                           randbook.ISBN, 'Implement Due Date', randbook.Copies-1])
-                 
+    # Set the labels for all the columns in all trees
     def setLabels(self):
         renderer = Gtk.CellRendererText()
         
@@ -143,7 +125,61 @@ class LibraryManager(Gtk.Window):
             self.SearchCombo.append_text(z)
         
         self.SearchCombo.set_active(1)
-        
+
+    # Fill the trees with the data. somewhat psuedo for now. *somewhat*
+    def fillData(self):
+        for x in Borrowed_Books:
+            treeitr = self.mainstore.append(x)
+            self.ItersList['mainstore'].append(treeitr)
+        for y in Books:
+            treeitr = self.Booksinfo.append(y.getInfo())
+            self.ItersList['Booksinfo'].append(treeitr)
+    
+    # The function to issue books. currently not working. bruh.
+    def Issue(self, button):
+        Book = None 
+        User = None 
+        if Book != '' and User != '':
+            for x in Books:
+                if x.Placement == int(self.BookPentry.get_text()):
+                    Book = x
+                    break
+            for y in Members:
+                if int(self.MemberEntry.get_text()) == y.ID:
+                    User = y
+                    break
+            for books in User.Active_Books:
+                if Book == books:
+                    return False
+            
+            for i in self.ItersList['Booksinfo']:
+                if Book.Placement == self.Booksinfo[i][1]:
+                    if Book.Available == False:
+                        return False
+                    else:
+                        Book.Copies = Book.Copies -1
+                        if Book.Copies == 0:
+                            Book.Available = False
+                        Borrowed_Books.append([User.name, User.ID, Book.Title, 
+                                              Book.Placement, Book.ISBN, 
+                                              'Implement Due Date', Book.Copies])
+                
+                        User.Active_Books.append(Book)
+                        print(User, Borrowed_Books[len(Borrowed_Books)-1])
+                        self.ItersList['mainstore'].append(self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1]))
+
+ 
+#         for x in range(len(Members)):
+#             if random.choice([True, False]):
+#                 randbook = random.choice(Books)
+#                 if randbook.Available == True:
+#                     Members[x].Active_Books.append(randbook)
+#                     randbook.Available = False
+#                     Borrowed_Books.append([Members[x].name, Members[x].ID,
+#                                            randbook.Title, randbook.Placement,
+#                                            randbook.ISBN, 'Implement Due Date', randbook.Copies-1])
+#                  
+#         
     def filterchoice(self, model, iter, data):
         self.index = self.SearchCombo.get_active()
         if self.booksearch.get_text() != '':
@@ -156,8 +192,6 @@ class LibraryManager(Gtk.Window):
         
     def search(self, widget):
         self.Booksfilter.refilter()
-        #the 2nd argument here just absorbs the input that'll be given for it. use for it may be found
-        #later.
     
     def removebook(self, button):
         selected = self.Booktable.get_selection()
