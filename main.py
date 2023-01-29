@@ -167,6 +167,9 @@ class LibraryManager(Gtk.Window):
                         User.Active_Books.append(Book)
                         print(User, Borrowed_Books[len(Borrowed_Books)-1])
                         self.ItersList['mainstore'].append(self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1]))
+                        for iter in self.ItersList['mainstore']:
+                            if Book.Placement == self.mainstore[iter][3]:
+                                self.mainstore[iter][6] = Book.Copies
 
  
 #         for x in range(len(Members)):
