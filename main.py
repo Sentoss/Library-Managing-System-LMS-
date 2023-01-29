@@ -2,10 +2,6 @@ import Member, Book, Populate, gi, random
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-#Books = [['Harry Potter', '1351351313'], ['The Ice Dragon', '1351351312'],
-        # ['Les Mots et Les Choses', '1351351358'], ['The Order of things', '1351351258'],
-         #['The Book Thief', '1351351234']]
-        
 Books = Populate.populatebook()
 Members = Populate.populatemember()
 Borrowed_Books = []
@@ -109,6 +105,7 @@ class LibraryManager(Gtk.Window):
         self.IssueButton.connect('clicked', self.Issue)
         #self.ReturnButton.connect('clicked', self.Return)
         
+        
     # Set the labels for all the columns in all trees
     def setLabels(self):
         renderer = Gtk.CellRendererText()
@@ -135,54 +132,60 @@ class LibraryManager(Gtk.Window):
             treeitr = self.Booksinfo.append(y.getInfo())
             self.ItersList['Booksinfo'].append(treeitr)
     
-    # The function to issue books. currently not working. bruh.
+    def raiseLog(self, message):
+            self.dialogue = Gtk.MessageDialog( transient_for=self, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=message)
+            self.dialogue.run()
+            self.dialogue.destroy()
+            
     def Issue(self, button):
-        Book = None 
-        User = None 
-        if Book != '' and User != '':
+        Book = self.BookPentry.get_text() 
+        User = self.MemberEntry.get_text()
+        try:
             for x in Books:
-                if x.Placement == int(self.BookPentry.get_text()):
+                if x.Placement == int(Book):
                     Book = x
                     break
+                
             for y in Members:
-                if int(self.MemberEntry.get_text()) == y.ID:
+                if int(User) == y.ID:
                     User = y
                     break
-            for books in User.Active_Books:
-                if Book == books:
-                    return False
+        except (ValueError, TypeError) as inst:
+            self.raiseLog("Please enter correct information!")
+            return
+        
+        if User == self.MemberEntry.get_text() or Book == self.BookPentry.get_text():
+            self.raiseLog("Please enter correct information!")
+            return
+        
+        for books in User.Active_Books:
+            if Book == books:
+                print("User already borrowed the book!")
+                return
             
-            for i in self.ItersList['Booksinfo']:
-                if Book.Placement == self.Booksinfo[i][1]:
-                    if Book.Available == False:
-                        return False
-                    else:
-                        Book.Copies = Book.Copies -1
-                        if Book.Copies == 0:
-                            Book.Available = False
-                        Borrowed_Books.append([User.name, User.ID, Book.Title, 
-                                              Book.Placement, Book.ISBN, 
-                                              'Implement Due Date', Book.Copies])
-                
-                        User.Active_Books.append(Book)
-                        print(User, Borrowed_Books[len(Borrowed_Books)-1])
-                        self.ItersList['mainstore'].append(self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1]))
-                        for iter in self.ItersList['mainstore']:
-                            if Book.Placement == self.mainstore[iter][3]:
-                                self.mainstore[iter][6] = Book.Copies
+        for i in self.ItersList['Booksinfo']:
+            if Book.Placement == self.Booksinfo[i][1]:
+                if Book.Available == False:
+                    return False
+                else:
+                    Book.Copies = Book.Copies -1
+                    if Book.Copies == 0:
+                        Book.Available = False
+                    Borrowed_Books.append([User.name, User.ID, Book.Title, 
+                                          Book.Placement, Book.ISBN, 
+                                          'Implement Due Date', Book.Copies])
+            
+                    User.Active_Books.append(Book)
+                    print(User, Borrowed_Books[len(Borrowed_Books)-1])
+                    self.ItersList['mainstore'].append(self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1]))
+                    for iter in self.ItersList['mainstore']:
+                        if Book.Placement == self.mainstore[iter][3]:
+                            self.mainstore[iter][6] = Book.Copies
 
- 
-#         for x in range(len(Members)):
-#             if random.choice([True, False]):
-#                 randbook = random.choice(Books)
-#                 if randbook.Available == True:
-#                     Members[x].Active_Books.append(randbook)
-#                     randbook.Available = False
-#                     Borrowed_Books.append([Members[x].name, Members[x].ID,
-#                                            randbook.Title, randbook.Placement,
-#                                            randbook.ISBN, 'Implement Due Date', randbook.Copies-1])
-#                  
-#         
+    def Return(self, button):
+        # to be added later
+        return
+
     def filterchoice(self, model, iter, data):
         self.index = self.SearchCombo.get_active()
         if self.booksearch.get_text() != '':
