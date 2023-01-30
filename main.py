@@ -21,9 +21,6 @@ class LibraryManager(Gtk.Window):
                       'Booksinfo' : ['ISBN', 'Placement', 'Title', 'Author', 'Language', 'Available', 'Copies'],
                       'Searchfield' : ['ISBN', 'Placement', 'Title', 'Author', 'Language']}
         
-        #a dict in which each key points to a list that contains all the iters of a store
-        self.ItersList = {'mainstore' : [],
-                          'Booksinfo' : []}
         self.booksearch = Gtk.Entry()
         self.SearchCombo = Gtk.ComboBoxText()
         self.mainstore = Gtk.ListStore(str, int, str, int, int, str, int)
@@ -103,7 +100,7 @@ class LibraryManager(Gtk.Window):
         self.booksearch.connect('activate', self.search)
         self.Removebook.connect('clicked', self.removebook)
         self.IssueButton.connect('clicked', self.Issue)
-        #self.ReturnButton.connect('clicked', self.Return)
+        self.ReturnButton.connect('clicked', self.Return)
         
         
     # Set the labels for all the columns in all trees
@@ -127,19 +124,20 @@ class LibraryManager(Gtk.Window):
     def fillData(self):
         for x in Borrowed_Books:
             treeitr = self.mainstore.append(x)
-            self.ItersList['mainstore'].append(treeitr)
+
         for y in Books:
             treeitr = self.Booksinfo.append(y.getInfo())
-            self.ItersList['Booksinfo'].append(treeitr)
     
     def raiseLog(self, message):
             self.dialogue = Gtk.MessageDialog( transient_for=self, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=message)
             self.dialogue.run()
             self.dialogue.destroy()
+
             
     def Issue(self, button):
         Book = self.BookPentry.get_text() 
         User = self.MemberEntry.get_text()
+        
         try:
             for x in Books:
                 if x.Placement == int(Book):
@@ -150,6 +148,7 @@ class LibraryManager(Gtk.Window):
                 if int(User) == y.ID:
                     User = y
                     break
+
         except (ValueError, TypeError) as inst:
             self.raiseLog("Please enter correct information!")
             return
@@ -163,29 +162,51 @@ class LibraryManager(Gtk.Window):
                 print("User already borrowed the book!")
                 return
             
-        for i in self.ItersList['Booksinfo']:
+        for i in self.Booksinfo:
             if Book.Placement == self.Booksinfo[i][1]:
                 if Book.Available == False:
                     return False
                 else:
-                    Book.Copies = Book.Copies -1
-                    if Book.Copies == 0:
+                    Book.CopiesLeft = Book.CopiesLeft -1
+                    if Book.CopiesLeft == 0:
                         Book.Available = False
                     Borrowed_Books.append([User.name, User.ID, Book.Title, 
                                           Book.Placement, Book.ISBN, 
-                                          'Implement Due Date', Book.Copies])
+                                          'Implement Due Date', Book.CopiesLeft])
             
                     User.Active_Books.append(Book)
-                    print(User, Borrowed_Books[len(Borrowed_Books)-1])
-                    self.ItersList['mainstore'].append(self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1]))
-                    for iter in self.ItersList['mainstore']:
+                    itr = self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1])
+                    print(itr)
+                    for iter in self.mainstore:
                         if Book.Placement == self.mainstore[iter][3]:
-                            self.mainstore[iter][6] = Book.Copies
+                            self.mainstore[iter][6] = Book.CopiesLeft
+                        
 
     def Return(self, button):
-        # to be added later
-        return
-
+        selected = self.dashboard.get_selection()
+        model, path = selected.get_selected_rows()
+        if len(path) != 0:
+            iter = self.mainstore.get_iter(path)
+            ISBN = self.mainstore[iter][0]
+            userID = self.mainstore[iter][1]
+            self.mainstore.remove(iter)
+            
+            for book in Borrowed_Books:
+                if book[1] == userID and book[3] == ISBN:
+                    Borrowed_Books.remove(book)
+                    
+            for member in Members:
+                if member.ID == userID:
+                    user = member
+            for z in user.Active_Books:
+                if z.ISBN == ISBN:
+                    user.Active_Books.remove(z)
+            
+        else:
+            self.raiseLog('Please choose an item from the list before clicking!')
+            return
+                            
+        
     def filterchoice(self, model, iter, data):
         self.index = self.SearchCombo.get_active()
         if self.booksearch.get_text() != '':
@@ -202,13 +223,12 @@ class LibraryManager(Gtk.Window):
     def removebook(self, button):
         selected = self.Booktable.get_selection()
         model, path = selected.get_selected_rows()
-        if path is not None:
+        if len(path) > 0:
             iter = self.Booksinfo.get_iter(path)
             ISBN = self.Booksinfo[iter][0]
-            for x in self.ItersList['mainstore']:
+            for x in self.mainstore:
                 if ISBN == self.mainstore[x][4]:
                     self.mainstore.remove(x)
-                    self.ItersList['mainstore'].remove(x)
                     break
                 
             for i in Books:
@@ -217,6 +237,10 @@ class LibraryManager(Gtk.Window):
                     
             self.Booksinfo.remove(iter)
             
+        else:
+            self.raiseLog('Please choose an item from the list before clicking!')
+            return
+        
 window = LibraryManager()
 window.connect('destroy', Gtk.main_quit)
 window.show_all()
