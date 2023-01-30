@@ -163,7 +163,7 @@ class LibraryManager(Gtk.Window):
                 return
             
         for i in self.Booksinfo:
-            if Book.Placement == self.Booksinfo[i][1]:
+            if Book.Placement == i[1]:
                 if Book.Available == False:
                     return False
                 else:
@@ -175,11 +175,11 @@ class LibraryManager(Gtk.Window):
                                           'Implement Due Date', Book.CopiesLeft])
             
                     User.Active_Books.append(Book)
-                    itr = self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1])
-                    print(itr)
-                    for iter in self.mainstore:
-                        if Book.Placement == self.mainstore[iter][3]:
-                            self.mainstore[iter][6] = Book.CopiesLeft
+                    self.mainstore.append(Borrowed_Books[len(Borrowed_Books)-1])
+                    counter = 0
+                    for object in self.mainstore:
+                        if Book.Placement == object[3]:
+                            object[6] = Book.CopiesLeft
                         
 
     def Return(self, button):
@@ -198,9 +198,12 @@ class LibraryManager(Gtk.Window):
             for member in Members:
                 if member.ID == userID:
                     user = member
+                    break
+                
             for z in user.Active_Books:
                 if z.ISBN == ISBN:
                     user.Active_Books.remove(z)
+                    break
             
         else:
             self.raiseLog('Please choose an item from the list before clicking!')
@@ -226,14 +229,20 @@ class LibraryManager(Gtk.Window):
         if len(path) > 0:
             iter = self.Booksinfo.get_iter(path)
             ISBN = self.Booksinfo[iter][0]
+            
             for x in self.mainstore:
-                if ISBN == self.mainstore[x][4]:
-                    self.mainstore.remove(x)
-                    break
+                if ISBN == x[4]:
+                    self.mainstore.remove(x.iter)
                 
             for i in Books:
                 if i.ISBN == self.Booksinfo[iter][0]:
                     Books.remove(i)
+                    break
+                
+            for m in Members:
+                for b in m.Active_Books:
+                    if b.ISBN == ISBN:
+                        m.Active_Books.remove(b)
                     
             self.Booksinfo.remove(iter)
             
