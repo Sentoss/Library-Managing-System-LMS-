@@ -5,8 +5,6 @@ from gi.repository import Gtk
 Books = Populate.populatebook()
 Members = Populate.populatemember()
 Borrowed_Books = []
-for x in Members:
-    print(x.getInfo())
 
 class LibraryManager(Gtk.Window):
     def __init__(self):
@@ -18,13 +16,16 @@ class LibraryManager(Gtk.Window):
         #it won't be difficult changing them later, but, let's keep it that way to
         #prioritize what's important
         self.Labelsdict = {'mainstore' : ['Member', 'ID', 'Title', 'Placement', 'ISBN', 'Due Date', 'Copies Left'],
-                      'Booksinfo' : ['ISBN', 'Placement', 'Title', 'Author', 'Language', 'Available', 'Copies'],
-                      'Searchfield' : ['ISBN', 'Placement', 'Title', 'Author', 'Language']}
+                           'Booksinfo' : ['ISBN', 'Placement', 'Title', 'Author', 'Language', 'Available', 'Copies'],
+                           'Searchfield' : ['ISBN', 'Placement', 'Title', 'Author', 'Language'],
+                           'Members' : ['ID', 'Name', 'Phone Number', 'year']}
         
         self.booksearch = Gtk.Entry()
         self.SearchCombo = Gtk.ComboBoxText()
         self.mainstore = Gtk.ListStore(str, int, str, int, int, str, int)
         self.Booksinfo = Gtk.ListStore(int, int, str, str, str, bool, int)
+        self.Membersinfo = Gtk.TreeStore(int, str, str, int)
+        self.Membersview = Gtk.TreeView(model=self.Membersinfo)
         self.Booksfilter = self.Booksinfo.filter_new()
         self.Booksfilter.set_visible_func(self.filterchoice)
         self.fillData()
@@ -58,6 +59,7 @@ class LibraryManager(Gtk.Window):
         self.ReturnButton = Gtk.Button(label='Return')
         self.MainButtonsGrid.attach(self.IssueButton, 0, 0, 1, 1)
         self.MainButtonsGrid.attach_next_to(self.ReturnButton, self.IssueButton, Gtk.PositionType.BOTTOM, 1, 1)
+
         
         #Assimilation
         self.Maintab.attach_next_to(self.MainButtonsGrid, self.dashboard, Gtk.PositionType.RIGHT, 2, 2)
@@ -66,25 +68,34 @@ class LibraryManager(Gtk.Window):
         
         ##Books Tab UI
         #Grids       
-        self.Bookstab = Gtk.Grid()
+        self.Bookstab = Gtk.Box()
         self.ButtonGrid = Gtk.Grid()
         self.ContentGrid = Gtk.Grid()
+        self.Bookstab.add(self.ContentGrid)
+        self.Bookstab.add(self.ButtonGrid)
         
         #Buttons
         self.Removebook = Gtk.Button(label='Remove')
         
         #Assimilation
-        self.Bookstab.attach(self.ContentGrid, 0, 0, 2, 2)
-        self.Bookstab.attach_next_to(self.ButtonGrid, self.ContentGrid, Gtk.PositionType.RIGHT, 1, 1)
+        #self.Bookgrid.attach(self.ContentGrid, 0, 0, 2, 2)
+        #self.Bookgrid.attach_next_to(self.ButtonGrid, self.ContentGrid, Gtk.PositionType.RIGHT, 1, 1)
         self.ContentGrid.attach(self.booksearch, 0, 0, 2, 2)
         self.ContentGrid.attach_next_to(self.Booktable, self.booksearch, Gtk.PositionType.BOTTOM, 2, 2)
         self.ButtonGrid.attach(self.SearchCombo, 0, 0, 1, 1)
         self.ButtonGrid.attach_next_to(self.Removebook, self.SearchCombo, Gtk.PositionType.BOTTOM, 1, 1)
+        self.booksearch.set_hexpand(True)
+        self.SearchCombo.set_hexpand(True)
+        self.Booktable.set_vexpand(True)
         self.navigation.append_page(self.Bookstab, Gtk.Label(label="Books"))
 
         # Members tab UI
         # Grids
-        self.Memberstab = Gtk.Grid()
+        self.Memberstab = Gtk.Box()
+        self.testG = Gtk.Grid()
+        self.testG.attach(self.Membersview, 0, 0, 1, 1)
+        self.Memberstab.add(self.testG)
+        self.testG.set_hexpand = True
         
         # Assimilation
         self.navigation.append_page(self.Memberstab, Gtk.Label(label="Members"))
@@ -102,7 +113,6 @@ class LibraryManager(Gtk.Window):
         self.IssueButton.connect('clicked', self.Issue)
         self.ReturnButton.connect('clicked', self.Return)
         
-        
     # Set the labels for all the columns in all trees
     def setLabels(self):
         renderer = Gtk.CellRendererText()
@@ -115,21 +125,27 @@ class LibraryManager(Gtk.Window):
             column = Gtk.TreeViewColumn(z, renderer, text=self.Labelsdict['Booksinfo'].index(z))
             self.Booktable.append_column(column)
         
+        for z in self.Labelsdict['Members']:
+            column = Gtk.TreeViewColumn(z, renderer, text=self.Labelsdict['Members'].index(z))
+            self.Membersview.append_column(column)
+        
         for z in self.Labelsdict['Searchfield']:
             self.SearchCombo.append_text(z)
         
         self.SearchCombo.set_active(1)
-
+    
     # Fill the trees with the data. somewhat psuedo for now. *somewhat*
     def fillData(self):
         for x in Borrowed_Books:
-            treeitr = self.mainstore.append(x)
-
+            self.mainstore.append(x)
         for y in Books:
-            treeitr = self.Booksinfo.append(y.getInfo())
+            self.Booksinfo.append(y.getInfo())
+        for z in Members:
+            self.Membersinfo.append(None, z.filltable())
     
     def raiseLog(self, message):
-            self.dialogue = Gtk.MessageDialog( transient_for=self, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=message)
+            self.dialogue = Gtk.MessageDialog(transient_for=self, message_type=Gtk.MessageType.INFO,
+                                              buttons=Gtk.ButtonsType.OK, text=message)
             self.dialogue.run()
             self.dialogue.destroy()
 
@@ -159,17 +175,19 @@ class LibraryManager(Gtk.Window):
         
         for books in User.Active_Books:
             if Book == books:
-                print("User already borrowed the book!")
+                self.raiseLog("User already borrowed the book!")
                 return
             
         for i in self.Booksinfo:
             if Book.Placement == i[1]:
                 if Book.Available == False:
-                    return False
+                    self.raiseLog("Sorry! No copies of the book are left")
+                    return
                 else:
                     Book.CopiesLeft = Book.CopiesLeft -1
                     if Book.CopiesLeft == 0:
                         Book.Available = False
+                        i[5] = False
                     Borrowed_Books.append([User.name, User.ID, Book.Title, 
                                           Book.Placement, Book.ISBN, 
                                           'Implement Due Date', Book.CopiesLeft])
@@ -187,10 +205,9 @@ class LibraryManager(Gtk.Window):
         model, path = selected.get_selected_rows()
         if len(path) != 0:
             iter = self.mainstore.get_iter(path)
-            ISBN = self.mainstore[iter][0]
+            ISBN = self.mainstore[iter][4]
             userID = self.mainstore[iter][1]
             self.mainstore.remove(iter)
-            
             for book in Borrowed_Books:
                 if book[1] == userID and book[3] == ISBN:
                     Borrowed_Books.remove(book)
@@ -202,9 +219,14 @@ class LibraryManager(Gtk.Window):
                 
             for z in user.Active_Books:
                 if z.ISBN == ISBN:
+                    z.CopiesLeft  = z.CopiesLeft + 1
                     user.Active_Books.remove(z)
+                    if z.Available == False:
+                        z.Available = True
                     break
-            
+                else:
+                    print(z.ISBN, ISBN)
+
         else:
             self.raiseLog('Please choose an item from the list before clicking!')
             return
@@ -229,21 +251,23 @@ class LibraryManager(Gtk.Window):
         if len(path) > 0:
             iter = self.Booksinfo.get_iter(path)
             ISBN = self.Booksinfo[iter][0]
-            
-            for x in self.mainstore:
-                if ISBN == x[4]:
-                    self.mainstore.remove(x.iter)
-                
+            for borrowed in Borrowed_Books:
+                if ISBN == borrowed[4]:
+                    Borrowed_Books.remove(borrowed)
+                    for x in self.mainstore:
+                        if ISBN == x[4]:
+                            self.mainstore.remove(x.iter)
+                            
+                    for m in Members:
+                        for b in m.Active_Books:
+                            if b.ISBN == ISBN:
+                                m.Active_Books.remove(b)
+                           
             for i in Books:
                 if i.ISBN == self.Booksinfo[iter][0]:
                     Books.remove(i)
                     break
                 
-            for m in Members:
-                for b in m.Active_Books:
-                    if b.ISBN == ISBN:
-                        m.Active_Books.remove(b)
-                    
             self.Booksinfo.remove(iter)
             
         else:
