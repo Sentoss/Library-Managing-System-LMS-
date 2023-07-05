@@ -4,9 +4,13 @@ This is a simple, open-source implementation of a managing application for small
 
 ## Installation
 The following prerequistes need to be met first:
+
 1- Python 3.7
+
 2- PyGObject (and it will be accompanied automatically with Gtk3)
+
 3- Pandas
+
 After that, launching the application will be a peace of cake.
 First, follow [the docs of PyGObject](https://pygobject.readthedocs.io/en/latest/getting_started.html#windows-getting-started) (except the GTK4 part) and that should install PyGObject.
 Just a few notes:
