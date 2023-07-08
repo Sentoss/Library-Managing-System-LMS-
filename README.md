@@ -24,5 +24,5 @@ For MacOS: there is currently no mac-compiled version (since I am compiling usin
 2- `Namespace GTK not available` even though `import gi` works
 
 ## How it looks
-![image](https://github.com/Sentoss/Library-Managing-System-LMS-/assets/34657765/01e8a0e5-56ba-40a0-8f7a-6808d420c8be)
+![Screenshot from 2023-07-08 23-44-51](https://github.com/Sentoss/Library-Managing-System-LMS-/assets/34657765/19237ca9-0be7-4f2d-88d8-bb0db7af3cdb)
 
