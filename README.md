@@ -22,3 +22,7 @@ For MacOS: there is currently no mac-compiled version (since I am compiling usin
 1- `note: This error originates from a subprocess, and is likely not a problem with pip.` This error seems to be fixed through....
 
 2- `Namespace GTK not available` even though `import gi` works
+
+## How it looks
+![image](https://github.com/Sentoss/Library-Managing-System-LMS-/assets/34657765/01e8a0e5-56ba-40a0-8f7a-6808d420c8be)
+
