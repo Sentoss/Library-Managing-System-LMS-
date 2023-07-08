@@ -194,12 +194,7 @@ class LibraryUI(Gtk.Window):
         self.booksbuttons.pack_start(self.Addbutton, False, False, 0)
         self.booksbuttons.pack_start(self.Removebutton, False, False, 0)
         self.bookstab.attach_next_to(self.booksbuttons, self.Bookscroll, Gtk.PositionType.RIGHT, 1, 1)
-        
-        # MAIN MENU: the settings for the combo box for choosing the book
-        # self.bookcombo.set_model(self.Booksinfo)
-        # self.booktext = Gtk.CellRendererText()
-        # self.bookcombo.pack_start(self.booktext, False)
-        # self.bookcombo.add_attribute(self.booktext, "text", 1)
+
 
         ######## MEMBERS' MENU
         
@@ -217,6 +212,7 @@ class LibraryUI(Gtk.Window):
         ###### YET TO IMPLEMENT THE FILTER/SEARCH FUNCTION
         self.Membersinfo = Gtk.ListStore(str, str, str, int)
         self.Memberstable = Gtk.TreeView(model=self.Membersinfo)
+        self.Memberstable.get_selection().connect("changed", self.DisplayData)
 
         # Wrap the view in a scrolled window
         self.Memberscroll = Gtk.ScrolledWindow()
@@ -243,17 +239,10 @@ class LibraryUI(Gtk.Window):
         self.membersdata.set_justification(Gtk.Justification.LEFT)
         self.memberstab.attach_next_to(self.membersdata, self.Memberscroll, Gtk.PositionType.BOTTOM, 1, 1)
 
-        # the settings for the combo box for choosing the member in the main menu
-        # self.membercombo.set_model(self.Membersinfo) 
-        # self.membertext = Gtk.CellRendererText()
-        # self.membercombo.pack_start(self.membertext, False)
-        # self.membercombo.add_attribute(self.membertext, "text", 0)
-
         # add the notebook (navigation bar and the pages) to Self/the window object, and set the labels for the tables/views
         self.setLabels()
+        self.mainview.columns_autosize()
         self.add(self.navigation)
-        # self.populate()
-        self.Memberstable.get_selection().connect("changed", self.DisplayData)
 
         # SEARCH IN BOOKS AND MEMBERS:
         ## Books
@@ -294,6 +283,7 @@ class LibraryUI(Gtk.Window):
         self.importbooks(None)
         self.importMembers()
         self.importMain()
+
     def setLabels(self):
         renderer = Gtk.CellRendererText()
         
@@ -301,14 +291,11 @@ class LibraryUI(Gtk.Window):
             index = self.Labelsdict['mainstore'].index(z)
             column = Gtk.TreeViewColumn(z, renderer, text=index)
             column.set_sort_column_id(index)
-            column.set_expand(True)
-            #column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
             self.mainview.append_column(column)
                 
         for z in self.Labelsdict['Booksinfo']:
             index = self.Labelsdict['Booksinfo'].index(z)
             column = Gtk.TreeViewColumn(z, renderer, text=index)
-            column.set_expand(True)
             column.set_sort_column_id(index)
             self.Bookstable.append_column(column)
         
@@ -462,7 +449,8 @@ class LibraryUI(Gtk.Window):
                 for item in self.mainstore:
                     if item[1] == ID:
                         found = True
-                        self.membersdata.get_buffer().insert_at_cursor("Book Title: {}\nBook Placement: {}\nDue Date: {}\n\n".format(
+                        self.membersdata.get_buffer().insert_at_cursor(
+                            "Book Title: {}\nBook Placement: {}\nDue Date: {}\n\n".format(
                             item[2], item[3], item[5]))
                     if not found:
                         self.membersdata.get_buffer().set_text("User has no data")
@@ -595,7 +583,7 @@ class LibraryUI(Gtk.Window):
                 except Exception as x:
                     dialog.destroy()
                     message = Gtk.MessageDialog(message_type=Gtk.MessageType.INFO,
-                                                    buttons=Gtk.ButtonsType.OK, text="Error! Import Failed!\n{}".format(x))
+                                                buttons=Gtk.ButtonsType.OK, text="Error! Import Failed!\n{}".format(x))
                     message.run()
                     message.destroy()
                     print(x)
@@ -686,7 +674,9 @@ class LibraryUI(Gtk.Window):
                 data.append(xdict)
                 xdict = {}
             json.dump(data, f, indent=4, ensure_ascii=False)
+
         Gtk.main_quit()
+
 window = LibraryUI()
 window.connect('destroy', window.save)
 window.show_all()
